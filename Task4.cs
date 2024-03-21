@@ -1,148 +1,158 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Newtonsoft.Json;
 
-public class Program
+class Book
 {
-    public static void Main()
-    {
-        string json = @"
-        [
-            6410,
-            2831,
-            5049,
-            7554,
-            [
-                8707,
-                6940,
-                9517,
-                7565,
-                7522,
-                9242,
-                7972,
-                7064,
-                3441,
-                [
-                    9960,
-                    4966,
-                    9368,
-                    1634,
-                    5150,
-                    3709,
-                    6660,
-                    [
-                        7155, 8056, 7834,
-                        2639, 6601, 8063,
-                        2390, 2544, 7022
-                    ]
-                ],
-                2385,
-                573,
-                656,
-                733,
-                1620,
-                3626,
-                [
-                    6274,
-                    1935,
-                    [ 6481, 928, 8291, 3196, 3431, 6058 ],
-                    8010,
-                    5052,
-                    892,
-                    3490,
-                    2369,
-                    951,
-                    1606,
-                    6763,
-                    7260,
-                    6122
-                ]
-            ],
-            5655,
-            4223
-        ]";
+    public string Title { get; set; }
+    public int PublicationYear { get; set; }
+    public string Author { get; set; }
+    public string Isbn { get; set; }
+}
 
+class Program
+{
+    static void Main(string[] args)
+    {
     
-        List<object> array = ParseJsonArray(json);
-        List<int> flattened = FlattenArray(array);
-        foreach (int num in flattened)
+        List<Book> booksData;
+        using (StreamReader r = new StreamReader("books.json"))
         {
-            Console.WriteLine(num);
+            string json = r.ReadToEnd();
+            booksData = JsonConvert.DeserializeObject<List<Book>>(json);
         }
-    }
 
-    public static List<object> ParseJsonArray(string json)
-    {
-        List<object> array = new List<object>();
-        int i = 0;
-        while (i < json.Length)
+        // Function to return only books starting with "The"
+        List<Book> BooksStartingWithThe(List<Book> books)
         {
-            if (json[i] == '[')
+            List<Book> result = new List<Book>();
+            foreach (var book in books)
             {
-                int startIndex = i + 1;
-                int endIndex = FindEndOfArray(json, startIndex);
-                string subArrayJson = json.Substring(startIndex, endIndex - startIndex);
-                array.Add(ParseJsonArray(subArrayJson));
-                i = endIndex + 1;
+                if (book.Title.StartsWith("The"))
+                {
+                    result.Add(book);
+                }
             }
-            else if (json[i] == ']' || json[i] == ',')
+            return result;
+        }
+
+        // Function to return only books written by authors with a 't' in their name
+        List<Book> BooksByAuthorsWithT(List<Book> books)
+        {
+            List<Book> result = new List<Book>();
+            foreach (var book in books)
             {
-                i++;
+                if (book.Author.ToLower().Contains("t"))
+                {
+                    result.Add(book);
+                }
+            }
+            return result;
+        }
+
+        // Function to count the number of books written after a given year
+        int BooksWrittenAfterYear(List<Book> books, int year)
+        {
+            int count = 0;
+            foreach (var book in books)
+            {
+                if (book.PublicationYear > year)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // Function to count the number of books written before a given year
+        int BooksWrittenBeforeYear(List<Book> books, int year)
+        {
+            int count = 0;
+            foreach (var book in books)
+            {
+                if (book.PublicationYear < year)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // Function to return the ISBN numbers of all books by a given author
+        List<string> IsbnNumbersByAuthor(List<Book> books, string authorName)
+        {
+            List<string> isbns = new List<string>();
+            foreach (var book in books)
+            {
+                if (book.Author.Contains(authorName))
+                {
+                    isbns.Add(book.Isbn);
+                }
+            }
+            return isbns;
+        }
+
+        // Function to list books alphabetically in ascending or descending order
+        List<Book> ListBooksAlphabetically(List<Book> books, bool ascending = true)
+        {
+            if (ascending)
+            {
+                books.Sort((x, y) => string.Compare(x.Title, y.Title));
             }
             else
             {
-                int endIndex = FindEndOfNumber(json, i);
-                string numStr = json.Substring(i, endIndex - i);
-                array.Add(int.Parse(numStr));
-                i = endIndex;
+                books.Sort((x, y) => string.Compare(y.Title, x.Title));
             }
+            return books;
         }
-        return array;
-    }
 
-    public static int FindEndOfArray(string json, int startIndex)
-    {
-        int count = 1;
-        int i = startIndex;
-        while (count != 0)
+        // Function to list books chronologically in ascending or descending order
+        List<Book> ListBooksChronologically(List<Book> books, bool ascending = true)
         {
-            if (json[i] == '[')
-                count++;
-            else if (json[i] == ']')
-                count--;
-            i++;
-        }
-        return i - 1;
-    }
-
-    public static int FindEndOfNumber(string json, int startIndex)
-    {
-        int i = startIndex;
-        while (i < json.Length && char.IsDigit(json[i]))
-        {
-            i++;
-        }
-        return i;
-    }
-
-    public static List<int> FlattenArray(List<object> array)
-    {
-        List<int> flattened = new List<int>();
-        FlattenArrayHelper(array, flattened);
-        return flattened;
-    }
-
-    private static void FlattenArrayHelper(List<object> array, List<int> flattened)
-    {
-        foreach (var item in array)
-        {
-            if (item is int)
+            if (ascending)
             {
-                flattened.Add((int)item);
+                books.Sort((x, y) => x.PublicationYear.CompareTo(y.PublicationYear));
             }
-            else if (item is List<object>)
+            else
             {
-                FlattenArrayHelper((List<object>)item, flattened);
+                books.Sort((x, y) => y.PublicationYear.CompareTo(x.PublicationYear));
             }
+            return books;
+        }
+
+        // Function to group books by author last name
+        Dictionary<string, List<Book>> GroupBooksByAuthorLastName(List<Book> books)
+        {
+            Dictionary<string, List<Book>> groupedBooks = new Dictionary<string, List<Book>>();
+            foreach (var book in books)
+            {
+                string[] authorNameParts = book.Author.Split(' ');
+                string lastName = authorNameParts[authorNameParts.Length - 1];
+                if (!groupedBooks.ContainsKey(lastName))
+                {
+                    groupedBooks[lastName] = new List<Book>();
+                }
+                groupedBooks[lastName].Add(book);
+            }
+            return groupedBooks;
+        }
+
+        // Function to group books by author first name
+        Dictionary<string, List<Book>> GroupBooksByAuthorFirstName(List<Book> books)
+        {
+            Dictionary<string, List<Book>> groupedBooks = new Dictionary<string, List<Book>>();
+            foreach (var book in books)
+            {
+                string[] authorNameParts = book.Author.Split(' ');
+                string firstName = authorNameParts[0];
+                if (!groupedBooks.ContainsKey(firstName))
+                {
+                    groupedBooks[firstName] = new List<Book>();
+                }
+                groupedBooks[firstName].Add(book);
+            }
+            return groupedBooks;
         }
     }
-}
+}    
