@@ -1,51 +1,87 @@
 using System;
-using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
-public class TreeNode
+class Node
 {
     public int Value { get; set; }
-    public TreeNode Left { get; set; }
-    public TreeNode Right { get; set; }
+    public Node Left { get; set; }
+    public Node Right { get; set; }
+}
 
-    public static TreeNode ParseJson(string json)
+class Program
+{
+    static void Main()
     {
-        return JObject.Parse(json).ToObject<TreeNode>();
+        Node rootNode = CreateTree(); 
+
+        int sum = CalculateSum(rootNode);
+        int deepestLevel = FindDeepestLevel(rootNode);
+        int nodeCount = CountNodes(rootNode);
+
+        Console.WriteLine($"Sum of the full structure: {sum}");
+        Console.WriteLine($"Deepest level of the structure: {deepestLevel}");
+        Console.WriteLine($"Number of nodes: {nodeCount}");
     }
 
-    public int CalculateSum()
+    static Node CreateTree()
     {
-        int sum = Value;
 
-        if (Left != null)
-            sum += Left.CalculateSum();
-        
-        if (Right != null)
-            sum += Right.CalculateSum();
 
-        return sum;
+        Node leaf241 = new Node { Value = 241 };
+        Node leaf571 = new Node { Value = 571, Left = leaf241 };
+        Node leaf558 = new Node { Value = 558, Left = leaf571 };
+        Node leaf269 = new Node { Value = 269, Left = leaf558 };
+
+        Node leaf653 = new Node { Value = 653, Left = leaf269 };
+
+        Node leaf879 = new Node { Value = 879 };
+        Node leaf330 = new Node { Value = 330, Left = new Node { Value = 752 }, Right = leaf879 };
+        Node leaf328 = new Node { Value = 328 };
+        Node leaf278 = new Node { Value = 278 };
+        Node leaf983 = new Node { Value = 983 };
+        Node leaf924 = new Node { Value = 924, Left = leaf269 };
+        Node leaf912 = new Node { Value = 912, Left = leaf983, Right = new Node { Value = 438 } };
+
+        Node leaf364 = new Node { Value = 364 };
+        Node leaf131 = new Node { Value = 131 };
+        Node leaf125 = new Node { Value = 125 };
+        Node leaf895 = new Node { Value = 895 };
+        Node leaf910 = new Node { Value = 910, Left = new Node { Value = 12 } };
+        Node leaf86 = new Node { Value = 86 };
+        Node leaf429 = new Node { Value = 429 };
+        Node leaf545 = new Node { Value = 545, Left = new Node { Value = 267 } };
+
+        Node leaf168 = new Node { Value = 168, Left = leaf732, Right = leaf168 };
+
+        Node leaf281 = new Node { Value = 281, Right = leaf168 };
+
+        return leaf281; 
     }
 
-    public int FindDeepestLevel()
+    static int CalculateSum(Node node)
     {
-        if (Left == null && Right == null)
+        if (node == null)
             return 0;
 
-        int leftDepth = Left != null ? Left.FindDeepestLevel() + 1 : 0;
-        int rightDepth = Right != null ? Right.FindDeepestLevel() + 1 : 0;
-
-        return Math.Max(leftDepth, rightDepth);
+        return node.Value + CalculateSum(node.Left) + CalculateSum(node.Right);
     }
 
-    public int CountNodes()
+    static int FindDeepestLevel(Node node)
     {
-        int count = 1;
+        if (node == null)
+            return 0;
 
-        if (Left != null)
-            count += Left.CountNodes();
-        
-        if (Right != null)
-            count += Right.CountNodes();
+        int leftDepth = FindDeepestLevel(node.Left);
+        int rightDepth = FindDeepestLevel(node.Right);
 
-        return count;
+        return Math.Max(leftDepth, rightDepth) + 1;
+    }
+
+    static int CountNodes(Node node)
+    {
+        if (node == null)
+            return 0;
+
+        return 1 + CountNodes(node.Left) + CountNodes(node.Right);
     }
 }
